@@ -7,6 +7,5 @@ const (
 
 var (
 	queries []string
-	sessions []string
 	proxies []string
 )

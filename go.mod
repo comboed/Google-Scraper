@@ -2,7 +2,10 @@ module Google-Scraper
 
 go 1.22.3
 
-require github.com/valyala/fasthttp v1.58.0
+require (
+	github.com/dgrr/cookiejar v0.0.0-20181027163754-344320c9f75e
+	github.com/valyala/fasthttp v1.58.0
+)
 
 require (
 	github.com/andybalholm/brotli v1.1.1 // indirect
