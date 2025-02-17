@@ -3,6 +3,7 @@ package main
 import (
 	"strconv"
 	"bufio"
+	"fmt"
 	"os"
 )
 
@@ -14,6 +15,12 @@ func openFile(filename string) (slice []string) {
 	}
 	file.Close()
 	return slice
+}
+
+func writeFile(filename, content string) {
+	var file, _ = os.OpenFile(filename, os.O_APPEND | os.O_CREATE | os.O_WRONLY, 0644)
+	fmt.Fprintln(file, content)
+	file.Close()
 }
 
 func formatNumber(number int64) string {
