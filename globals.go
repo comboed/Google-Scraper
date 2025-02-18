@@ -1,8 +1,9 @@
 package main
 
 const (
+	CapSolverKey string = "CAP-B367787B6A0E5DEEE4186194F7C81372"
+	
 	MaxPages int = 10
-	CapMonsterKey string = "dd04d1641846e87b0a3a4debfa9de955"
 )
 
 var (

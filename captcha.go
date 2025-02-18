@@ -3,30 +3,30 @@ package main
 import (
 	"github.com/valyala/fasthttp"
 	"github.com/valyala/fastjson"
+	"net/url"
 	"strings"
-	"strconv"
 	"time"
 	"fmt"
 	"log"
 )
 
-func createCaptchaTask(query string) string {
+func createCaptchaTask(location, enterpriseValue string) string {
 	var request *fasthttp.Request = createRequest("POST")
 	var response *fasthttp.Response = fasthttp.AcquireResponse()
 
 	defer fasthttp.ReleaseRequest(request)
 	defer fasthttp.ReleaseResponse(response)
 
-	request.SetRequestURI("https://api.capmonster.cloud/createTask")
+	request.SetRequestURI("https://api.capsolver.com/createTask")
 	request.Header.Set("Content-Type", "application/json")
-	request.SetBody([]byte(fmt.Sprintf(`{"clientKey": "%s","task":{"type": "RecaptchaV2TaskProxyless","websiteURL": "%s","websiteKey": "6LfwuyUTAAAAAOAmoS0fdqijC2PbbdH4kjq62Y1b"}}`, CapMonsterKey, query)))
+	request.SetBody([]byte(fmt.Sprintf(`{"clientKey":"%s","task":{"type":"ReCaptchaV2Task","websiteURL":"%s","websiteKey":"6LfwuyUTAAAAAOAmoS0fdqijC2PbbdH4kjq62Y1b","enterprisePayload":{"s":"%s"}}}`, CapSolverKey, location, enterpriseValue)))
 
 	for i := 0; i < 10; i++ {
 		fasthttp.Do(request, response)
 		var body []byte = response.Body()
 
-		if taskId := fastjson.GetInt(body, "taskId"); (taskId != 0) {
-			return strconv.Itoa(taskId)
+		if taskId := fastjson.GetString(body, "taskId"); (taskId != "") {
+			return taskId
 		}
 		log.Printf("[WARNING] Attempt %d: Failed to create captcha task (Response: %s)", i + 1, string(body))
 	}
@@ -41,9 +41,9 @@ func getCaptchaResult(taskID string) string {
 	defer fasthttp.ReleaseRequest(request)
 	defer fasthttp.ReleaseResponse(response)
 
-	request.SetRequestURI("https://api.capmonster.cloud/getTaskResult")
+	request.SetRequestURI("https://api.capsolver.com/getTaskResult")
 	request.Header.Set("Content-Type", "application/json")
-	request.SetBody([]byte(fmt.Sprintf(`{"clientKey":"%s","taskId":"%s"}`, CapMonsterKey, taskID)))
+	request.SetBody([]byte(fmt.Sprintf(`{"clientKey":"%s","taskId":"%s"}`, CapSolverKey, taskID)))
 	
 	for i := 0 ; i < 30; i++ {
 		fasthttp.Do(request, response)
@@ -57,15 +57,24 @@ func getCaptchaResult(taskID string) string {
 	return ""
 }
 
-func submitCaptcha(client *fasthttp.Client, request *fasthttp.Request, captchaToken, query string) bool {
+func submitCaptcha(client *fasthttp.Client, token, location string) string {
+	var request *fasthttp.Request = createRequest("POST")
 	var response *fasthttp.Response = fasthttp.AcquireResponse()
+	var parts []string = strings.Split(location, "&q=")
 	defer fasthttp.ReleaseResponse(response)
-
+	
 	request.Header.SetMethod("POST")
 	request.SetRequestURI("https://www.google.com/sorry/index")
-	request.SetBody([]byte(fmt.Sprintf(`g-recaptcha-response=%s&continue=%s`, captchaToken, query)))
+
+	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	request.SetBody([]byte(fmt.Sprintf("g-recaptcha-response=%s&q=%s&continue=%s", token, parts[1], strings.Split(parts[0], "continue=")[1])))
 
 	client.Do(request, response)
-
-	return response.StatusCode() == 302 && strings.Contains(response.Header.String(), query)
+	
+	if (response.StatusCode() == 302) {
+		var unescapedUrl, _ = url.QueryUnescape(string(response.Header.Peek("Location")))
+		return unescapedUrl
+	}
+	log.Println("[ERROR] Failed to get abuse cookie")
+	return ""
 }

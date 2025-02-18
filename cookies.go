@@ -1,49 +1,62 @@
 package main
 
 import (
-	"github.com/valyala/fasthttp"
-	"github.com/dgrr/cookiejar"
-	"strings"
+	"fmt"
+	_ "fmt"
 	"log"
-	"os"
+	_ "os"
+	"strings"
+
+	"github.com/dgrr/cookiejar"
+	"github.com/valyala/fasthttp"
 )
 
-func storeInitialCookies(client *fasthttp.Client, request *fasthttp.Request) bool {
+func storeInitialCookiesAndRedirect(client *fasthttp.Client, request *fasthttp.Request) string {
 	var response *fasthttp.Response = fasthttp.AcquireResponse()
 	var cookieJar *cookiejar.CookieJar = cookiejar.AcquireCookieJar()
+	var NIDAuthentication bool
 	defer fasthttp.ReleaseResponse(response)
-
-	request.SetRequestURI("https://www.google.com/search")
+	
+	request.SetRequestURI("https://www.google.com/search?q=test")
 
 	for i := 0; i < 10; i++ {
 		client.Do(request, response)
 		cookieJar.ReadResponse(response)
 		cookieJar.FillRequest(request)
-		var header string = request.Header.String()
-		
-		if strings.Contains(header, "AEC=") && strings.Contains(header, "NID=") {
-			return response.StatusCode() != 302 // Will tell us if we have a captcha
+		var statusCode int = response.StatusCode()
+
+		if (statusCode == 200) {
+			if (NIDAuthentication) {
+				return "SKIP"
+			}
+			request.Header.Add("Cookie", "SG_SS=")
+			NIDAuthentication = true
+			continue
 		}
-		log.Printf("[%d] Failed to get initial cookies, retrying", i)
+		if (statusCode == 302 && strings.Contains(request.Header.String(), "NID=")) {
+			return string(response.Header.Peek("Location"))
+		}
+		log.Printf("[WARNING] Attempt %v: Failed to get inital cookies", i + 1)
 		request.Header.DelAllCookies()
 		cookieJar.Release()
 	}
-	log.Printf("Failed to get store inital cookie after 10 attempts")
-	os.Exit(0)
-	return false
+	log.Printf("[ERROR] Failed to get store inital cookie after 10 attempts")
+	return ""
 }
 
-func getExemptionCookie(client *fasthttp.Client, request *fasthttp.Request, query string) bool {
+
+func getEnterpriseValue(client *fasthttp.Client, request *fasthttp.Request, location string) string {
 	var response *fasthttp.Response = fasthttp.AcquireResponse()
-	var cookieJar *cookiejar.CookieJar = cookiejar.AcquireCookieJar()
 	defer fasthttp.ReleaseResponse(response)
 
-	request.Header.SetMethod("GET")
-	request.SetRequestURI(query)
+	request.SetRequestURI(location)
 
 	client.Do(request, response)
-	cookieJar.ReadResponse(response)
-	cookieJar.ReadRequest(request)
+	var body string = string(response.Body())
 
-	return strings.Contains(request.Header.String(), "GOOGLE_ABUSE_EXEMPTION")
+	if (!strings.Contains(body, "data-s=")) {
+		log.Printf("[ERROR] Failed to get captcha enterprise value")
+		return ""
+	}
+	return strings.Split(strings.Split(body, `data-s="`)[1], `"`)[0]
 }
