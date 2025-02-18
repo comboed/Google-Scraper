@@ -5,6 +5,7 @@ go 1.22.3
 require (
 	github.com/dgrr/cookiejar v0.0.0-20181027163754-344320c9f75e
 	github.com/valyala/fasthttp v1.58.0
+	github.com/valyala/fastjson v1.6.4
 )
 
 require (

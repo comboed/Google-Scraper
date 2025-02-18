@@ -2,7 +2,7 @@ package main
 
 const (
 	MaxPages int = 10
-	CapsolverKey string = ""
+	CapMonsterKey string = "dd04d1641846e87b0a3a4debfa9de955"
 )
 
 var (

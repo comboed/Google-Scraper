@@ -28,10 +28,11 @@ func createClient() *fasthttp.Client {
 
 }
 
-func createRequest() *fasthttp.Request {
+func createRequest(method string) *fasthttp.Request {
 	var request *fasthttp.Request = fasthttp.AcquireRequest()
 
-	request.Header.SetMethod("GET")
+	request.Header.SetMethod(method)
+
 	for key, value := range getHeaders() {
         request.Header.Set(key, value)
     }

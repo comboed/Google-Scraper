@@ -5,7 +5,6 @@ import (
 	"github.com/dgrr/cookiejar"
 	"strings"
 	"log"
-	"fmt"
 	"os"
 )
 
@@ -32,20 +31,6 @@ func storeInitialCookies(client *fasthttp.Client, request *fasthttp.Request) boo
 	log.Printf("Failed to get store inital cookie after 10 attempts")
 	os.Exit(0)
 	return false
-}
-
-func submitCaptcha(client *fasthttp.Client, request *fasthttp.Request, captchaToken, query string) bool {
-	var response *fasthttp.Response = fasthttp.AcquireResponse()
-	defer fasthttp.ReleaseResponse(response)
-
-	request.Header.SetMethod("POST")
-	request.SetRequestURI("https://www.google.com/sorry/index")
-
-	request.SetBody([]byte(fmt.Sprintf(`g-recaptcha-response=%s&continue=%s`, captchaToken, query)))
-
-	client.Do(request, response)
-
-	return response.StatusCode() == 302 && strings.Contains(response.Header.String(), query)
 }
 
 func getExemptionCookie(client *fasthttp.Client, request *fasthttp.Request, query string) bool {
