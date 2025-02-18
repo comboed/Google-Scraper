@@ -1,35 +1,27 @@
 package main
 
 import (
+	// "fmt"
 	"github.com/valyala/fasthttp"
 	"github.com/dgrr/cookiejar"
 	"strings"
 	"log"
 )
 
-func storeInitialCookiesAndRedirect(client *fasthttp.Client, request *fasthttp.Request) string {
+func preAuthorizeIP(client *fasthttp.Client, request *fasthttp.Request) string {
 	var response *fasthttp.Response = fasthttp.AcquireResponse()
 	var cookieJar *cookiejar.CookieJar = cookiejar.AcquireCookieJar()
-	var NIDAuthentication bool
 	defer fasthttp.ReleaseResponse(response)
 	
 	request.SetRequestURI("https://www.google.com/search?q=test")
+	request.Header.Set("Cookie", "SG_SS=")
 
 	for i := 0; i < 10; i++ {
 		client.Do(request, response)
 		cookieJar.ReadResponse(response)
 		cookieJar.FillRequest(request)
-		var statusCode int = response.StatusCode()
 
-		if (statusCode == 200) {
-			if (NIDAuthentication) {
-				return "NO lOCATION"
-			}
-			request.Header.Add("Cookie", "SG_SS=") // A little trick that seems to somehow authenticate the cookie :P
-			NIDAuthentication = true
-			continue
-		}
-		if (statusCode == 302 && strings.Contains(request.Header.String(), "NID=")) {
+		if (strings.Contains(string(response.Body()), "302 Moved") && strings.Contains(request.Header.String(), "NID=")) {
 			return string(response.Header.Peek("Location"))
 		}
 		log.Printf("[WARNING] Attempt %v: Failed to get inital cookies \n %s", i + 1, strings.Repeat(" ", 35))

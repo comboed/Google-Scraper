@@ -1,12 +1,12 @@
 package main
 
 import (
-	"fmt"
-	"os"
+	"github.com/valyala/fasthttp"
 	"strconv"
 	"strings"
-
-	"github.com/valyala/fasthttp"
+	"log"
+	_"fmt"
+	"os"
 )
 
 func createCrawler() *fasthttp.Request {
@@ -14,26 +14,30 @@ func createCrawler() *fasthttp.Request {
 	var request *fasthttp.Request = createRequest("GET")
 
 	for i := 0; i < 10; i++ {
-		var location string = storeInitialCookiesAndRedirect(client, request)
-		if (location == "NO lOCATION") {
+		var location string = preAuthorizeIP(client, request)
+		if (location == "NO LOCATION") {
 			return request
 		}
 		if (location == "") {
+			log.Printf("[ERROR] Failed to get store IP authorization cookies %s", strings.Repeat(" ", 35))
 			continue
 		}
 
 		var enterpriseValue string = getEnterpriseValue(client, request, location)
 		if (enterpriseValue == "") {
+			log.Printf("[ERROR] Failed to get captcha enterprise value %s \n", strings.Repeat(" ", 35))
 			continue
 		}
 
 		var taskId string = createCaptchaTask(location, enterpriseValue)
 		if (taskId == "") {
+			log.Printf("[ERROR] Failed to create captcha task %s \n", strings.Repeat(" ", 35))
 			continue
 		}
 
 		var token string = getCaptchaResult(taskId)
 		if (token == "") {
+			log.Printf("[ERROR] Failed to get captcha token after 30 attempts %s \n", strings.Repeat(" ", 35))
 			continue
 		}
 		
@@ -49,17 +53,27 @@ func createCrawler() *fasthttp.Request {
 	return nil
 }
 
-func run(client *fasthttp.Client, channel chan string) {
+func Query(query string, page int) []SearchResult {
+	var client *fasthttp.Client = createClient()
 	var request *fasthttp.Request = createCrawler()
 	var response *fasthttp.Response = fasthttp.AcquireResponse()
-	var count int = 9
-	
-	//var query string = <- channel
-	request.SetRequestURI("https://www.google.com/search?q=" + "test" + "&start=" + strconv.Itoa(count))
-	client.Do(request, response)
 
-	// Split this first; then split `,5,null` then `","`` to parse full data
-	var data []string = strings.Split(string(response.Body()), "WEB_RESULT_INNER")[1:]
-	fmt.Println(data[0])
-	fmt.Println(data[1])
+	defer fasthttp.ReleaseRequest(request)
+	defer fasthttp.ReleaseResponse(response)
+
+	request.SetRequestURI("https://www.google.com/search?q=" + query + "&start=" + strconv.Itoa(9 * page))
+
+	client.Do(request, response)
+	var body string = string(response.Body())
+	
+	var results []SearchResult
+	if strings.Contains(body, `"WEB_RESULT_INNER",["`) {
+		var sections []string = strings.Split(body, `"WEB_RESULT_INNER",null,"BLUR",0,0,0,null,"`)[1:]
+
+		for i := range sections {
+			var parts []string = strings.Split(sections[i], `"],[`)
+			results = append(results, SearchResult{ URL: parts[0], Description: strings.Split(parts[1], `","data:image`)[0],})
+		}
+	}
+	return results
 }
