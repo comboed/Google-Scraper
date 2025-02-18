@@ -14,7 +14,7 @@ func createCrawler() *fasthttp.Request {
 
 	for i := 0; i < 10; i++ {
 		var location string = storeInitialCookiesAndRedirect(client, request)
-		if (location == "SKIP") {
+		if (location == "NO lOCATION") {
 			return request
 		}
 		if (location == "") {

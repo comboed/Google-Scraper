@@ -28,9 +28,9 @@ func createCaptchaTask(location, enterpriseValue string) string {
 		if taskId := fastjson.GetString(body, "taskId"); (taskId != "") {
 			return taskId
 		}
-		log.Printf("[WARNING] Attempt %d: Failed to create captcha task (Response: %s)", i + 1, string(body))
+		log.Printf("[WARNING] Attempt %d: Failed to create captcha task (Response: %s) %s \n", i + 1, string(body), strings.Repeat(" ", 35))
 	}
-	log.Println("[ERROR] Failed to create captcha task after 10 attempts")
+	log.Printf("[ERROR] Failed to create captcha task after 10 attempts %s \n", strings.Repeat(" ", 35))
 	return ""
 }
 
@@ -51,9 +51,9 @@ func getCaptchaResult(taskID string) string {
 		if token := fastjson.GetString(response.Body(), "solution", "gRecaptchaResponse"); (token != "") {
 			return token
 		}
-		time.Sleep(time.Second * 5)
+		time.Sleep(time.Second * 2)
 	}
-	log.Println("[ERROR] Failed to get captcha token after 30 attempts")
+	log.Printf("[ERROR] Failed to get captcha token after 30 attempts %s \n", strings.Repeat(" ", 35))
 	return ""
 }
 
@@ -75,6 +75,6 @@ func submitCaptcha(client *fasthttp.Client, token, location string) string {
 		var unescapedUrl, _ = url.QueryUnescape(string(response.Header.Peek("Location")))
 		return unescapedUrl
 	}
-	log.Println("[ERROR] Failed to get abuse cookie")
+	log.Printf("[ERROR] Failed to get abuse url %s \n", strings.Repeat(" ", 35))
 	return ""
 }

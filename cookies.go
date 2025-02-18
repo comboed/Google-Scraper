@@ -23,20 +23,20 @@ func storeInitialCookiesAndRedirect(client *fasthttp.Client, request *fasthttp.R
 
 		if (statusCode == 200) {
 			if (NIDAuthentication) {
-				return "SKIP"
+				return "NO lOCATION"
 			}
-			request.Header.Add("Cookie", "SG_SS=")
+			request.Header.Add("Cookie", "SG_SS=") // A little trick that seems to somehow authenticate the cookie :P
 			NIDAuthentication = true
 			continue
 		}
 		if (statusCode == 302 && strings.Contains(request.Header.String(), "NID=")) {
 			return string(response.Header.Peek("Location"))
 		}
-		log.Printf("[WARNING] Attempt %v: Failed to get inital cookies", i + 1)
+		log.Printf("[WARNING] Attempt %v: Failed to get inital cookies \n %s", i + 1, strings.Repeat(" ", 35))
 		request.Header.DelAllCookies()
 		cookieJar.Release()
 	}
-	log.Printf("[ERROR] Failed to get store inital cookie after 10 attempts")
+	log.Printf("[ERROR] Failed to get store inital cookie after 10 attempts %s", strings.Repeat(" ", 35))
 	return ""
 }
 
@@ -51,7 +51,7 @@ func getEnterpriseValue(client *fasthttp.Client, request *fasthttp.Request, loca
 	var body string = string(response.Body())
 
 	if (!strings.Contains(body, "data-s=")) {
-		log.Printf("[ERROR] Failed to get captcha enterprise value")
+		log.Printf("[ERROR] Failed to get captcha enterprise value %s \n", strings.Repeat(" ", 35))
 		return ""
 	}
 	return strings.Split(strings.Split(body, `data-s="`)[1], `"`)[0]
