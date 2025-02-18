@@ -1,14 +1,10 @@
 package main
 
 import (
-	"fmt"
-	_ "fmt"
-	"log"
-	_ "os"
-	"strings"
-
-	"github.com/dgrr/cookiejar"
 	"github.com/valyala/fasthttp"
+	"github.com/dgrr/cookiejar"
+	"strings"
+	"log"
 )
 
 func storeInitialCookiesAndRedirect(client *fasthttp.Client, request *fasthttp.Request) string {
