@@ -6,7 +6,6 @@ import (
 	"strings"
 	"log"
 	_"fmt"
-	"os"
 )
 
 func createCrawler() *fasthttp.Request {
@@ -49,7 +48,6 @@ func createCrawler() *fasthttp.Request {
 		request.Header.Add("Cookie", strings.Split(strings.Split(abuseUrl, "google_abuse=")[1], ";")[0])
 		return request
 	}
-	os.Exit(0)
 	return nil
 }
 
@@ -67,11 +65,11 @@ func Query(query string, page int) []SearchResult {
 	var body string = string(response.Body())
 	
 	var results []SearchResult
-	if strings.Contains(body, `"WEB_RESULT_INNER",["`) {
+	if (strings.Contains(body, `"WEB_RESULT_INNER",["`)) {
 		var sections []string = strings.Split(body, `"WEB_RESULT_INNER",null,"BLUR",0,0,0,null,"`)[1:]
 
 		for i := range sections {
-			var parts []string = strings.Split(sections[i], `"],[`)
+			var parts []string = strings.Split(sections[i], `"],["`)
 			results = append(results, SearchResult{ URL: parts[0], Description: strings.Split(parts[1], `","data:image`)[0],})
 		}
 	}
