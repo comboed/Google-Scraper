@@ -1,11 +1,12 @@
 package main
 
 import (
-	"github.com/valyala/fasthttp"
-	"strings"
-	"strconv"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
+
+	"github.com/valyala/fasthttp"
 )
 
 func createCrawler() *fasthttp.Request {
@@ -56,6 +57,9 @@ func run(client *fasthttp.Client, channel chan string) {
 	//var query string = <- channel
 	request.SetRequestURI("https://www.google.com/search?q=" + "test" + "&start=" + strconv.Itoa(count))
 	client.Do(request, response)
-	fmt.Println(response.String())
-		
+
+	// Split this first; then split `,5,null` then `","`` to parse full data
+	var data []string = strings.Split(string(response.Body()), "WEB_RESULT_INNER")[1:]
+	fmt.Println(data[0])
+	fmt.Println(data[1])
 }
