@@ -18,18 +18,19 @@ func createCaptchaTask(query string) string {
 	defer fasthttp.ReleaseResponse(response)
 
 	request.SetRequestURI("https://api.capmonster.cloud/createTask")
-
 	request.Header.Set("Content-Type", "application/json")
 	request.SetBody([]byte(fmt.Sprintf(`{"clientKey": "%s","task":{"type": "RecaptchaV2TaskProxyless","websiteURL": "%s","websiteKey": "6LfwuyUTAAAAAOAmoS0fdqijC2PbbdH4kjq62Y1b"}}`, CapMonsterKey, query)))
 
 	for i := 0; i < 10; i++ {
 		fasthttp.Do(request, response)
-		if taskId := fastjson.GetInt(response.Body(), "taskId"); (taskId != 0) {
+		var body []byte = response.Body()
+
+		if taskId := fastjson.GetInt(body, "taskId"); (taskId != 0) {
 			return strconv.Itoa(taskId)
 		}
-		log.Printf("[%v] Failed to create captcha task, retrying \n", i)
+		log.Printf("[WARNING] Attempt %d: Failed to create captcha task (Response: %s)", i + 1, string(body))
 	}
-	log.Printf("Failed to create captcha task after 10 attempts \n")
+	log.Println("[ERROR] Failed to create captcha task after 10 attempts")
 	return ""
 }
 
@@ -41,18 +42,18 @@ func getCaptchaResult(taskID string) string {
 	defer fasthttp.ReleaseResponse(response)
 
 	request.SetRequestURI("https://api.capmonster.cloud/getTaskResult")
-	
 	request.Header.Set("Content-Type", "application/json")
 	request.SetBody([]byte(fmt.Sprintf(`{"clientKey":"%s","taskId":"%s"}`, CapMonsterKey, taskID)))
 	
 	for i := 0 ; i < 30; i++ {
 		fasthttp.Do(request, response)
+
 		if token := fastjson.GetString(response.Body(), "solution", "gRecaptchaResponse"); (token != "") {
 			return token
 		}
-		time.Sleep(time.Second * 2)
+		time.Sleep(time.Second * 5)
 	}
-	log.Printf("Failed to get captcha token after 15 attempts \n")
+	log.Println("[ERROR] Failed to get captcha token after 30 attempts")
 	return ""
 }
 
@@ -62,7 +63,6 @@ func submitCaptcha(client *fasthttp.Client, request *fasthttp.Request, captchaTo
 
 	request.Header.SetMethod("POST")
 	request.SetRequestURI("https://www.google.com/sorry/index")
-
 	request.SetBody([]byte(fmt.Sprintf(`g-recaptcha-response=%s&continue=%s`, captchaToken, query)))
 
 	client.Do(request, response)
