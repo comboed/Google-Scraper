@@ -1,11 +1,9 @@
 package main
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/dgrr/cookiejar"
 	"github.com/valyala/fasthttp"
+	"strings"
 )
 
 func preAuthorizeIP(client *fasthttp.Client, request *fasthttp.Request) string {
@@ -21,7 +19,6 @@ func preAuthorizeIP(client *fasthttp.Client, request *fasthttp.Request) string {
 	cookieJar.FillRequest(request)
 
 	if (!strings.Contains(string(response.Body()), "302 Moved")) {
-		fmt.Println(string(response.Body()))
 		return ""
 	}
 	return string(response.Header.Peek("Location"))

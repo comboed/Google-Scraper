@@ -19,7 +19,7 @@ func main() {
 
 		if (err != nil || query == "" || page < 0) {
 			context.JSON(http.StatusBadRequest, gin.H{"error": "Invalid query or page number"})
-			page = 0 // Set it to default page number
+			return
 		}
 
 		var results []SearchResult = Query(query, page - 1)
