@@ -6,6 +6,8 @@ const (
 )
 
 type SearchResult struct {
-	URL         string `json:"url"`
+	URL string `json:"url"`
 	Description string `json:"description"`
 }
+
+var proxies []string

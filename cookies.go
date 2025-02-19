@@ -1,11 +1,9 @@
 package main
 
 import (
-	// "fmt"
 	"github.com/valyala/fasthttp"
 	"github.com/dgrr/cookiejar"
 	"strings"
-	"log"
 )
 
 func preAuthorizeIP(client *fasthttp.Client, request *fasthttp.Request) string {
@@ -16,22 +14,15 @@ func preAuthorizeIP(client *fasthttp.Client, request *fasthttp.Request) string {
 	request.SetRequestURI("https://www.google.com/search?q=test")
 	request.Header.Set("Cookie", "SG_SS=")
 
-	for i := 0; i < 10; i++ {
-		client.Do(request, response)
-		cookieJar.ReadResponse(response)
-		cookieJar.FillRequest(request)
+	client.Do(request, response)
+	cookieJar.ReadResponse(response)
+	cookieJar.FillRequest(request)
 
-		if (strings.Contains(string(response.Body()), "302 Moved") && strings.Contains(request.Header.String(), "NID=")) {
-			return string(response.Header.Peek("Location"))
-		}
-		log.Printf("[WARNING] Attempt %v: Failed to get inital cookies \n %s", i + 1, strings.Repeat(" ", 35))
-		request.Header.DelAllCookies()
-		cookieJar.Release()
+	if (!strings.Contains(string(response.Body()), "302 Moved") && !strings.Contains(string(request.Header.Peek("Cookie")), "NID=")) {
+		return ""
 	}
-	log.Printf("[ERROR] Failed to get store inital cookie after 10 attempts %s", strings.Repeat(" ", 35))
-	return ""
+	return string(response.Header.Peek("Location"))
 }
-
 
 func getEnterpriseValue(client *fasthttp.Client, request *fasthttp.Request, location string) string {
 	var response *fasthttp.Response = fasthttp.AcquireResponse()
@@ -43,7 +34,6 @@ func getEnterpriseValue(client *fasthttp.Client, request *fasthttp.Request, loca
 	var body string = string(response.Body())
 
 	if (!strings.Contains(body, "data-s=")) {
-		log.Printf("[ERROR] Failed to get captcha enterprise value %s \n", strings.Repeat(" ", 35))
 		return ""
 	}
 	return strings.Split(strings.Split(body, `data-s="`)[1], `"`)[0]

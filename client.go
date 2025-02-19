@@ -1,12 +1,12 @@
 package main
 
 import (
-	_"github.com/valyala/fasthttp/fasthttpproxy"
+	"github.com/valyala/fasthttp/fasthttpproxy"
 	"github.com/valyala/fasthttp"
-	_"math/rand"
-	"crypto/tls"
-	_"time"
-	_"net"
+    "crypto/tls"
+    "math/rand"
+	"time"
+	"net"
 )
 
 func createClient() *fasthttp.Client {
@@ -21,9 +21,9 @@ func createClient() *fasthttp.Client {
 			MinVersion: tls.VersionTLS13,
 			MaxVersion: tls.VersionTLS13,
 		},
-		// Dial: func(addr string) (net.Conn, error) {
-		// 	return fasthttpproxy.FasthttpHTTPDialerTimeout(proxies[rand.Intn(len(proxies))], time.Minute)(addr)
-		// },
+		Dial: func(addr string) (net.Conn, error) {
+			return fasthttpproxy.FasthttpHTTPDialerTimeout(proxies[rand.Intn(len(proxies))], time.Minute)(addr)
+		},
 	}
 
 }
