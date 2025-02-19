@@ -3,15 +3,14 @@ package main
 import (
 	"github.com/valyala/fasthttp/fasthttpproxy"
 	"github.com/valyala/fasthttp"
-    "crypto/tls"
+	"crypto/tls"
     "math/rand"
-	"time"
 	"net"
 )
 
 func createClient() *fasthttp.Client {
 	return &fasthttp.Client {
-		MaxConnsPerHost: 1,
+		MaxConnsPerHost: 1000,
 		ReadBufferSize: 4096 * 3,
 		DisablePathNormalizing: true,
 		NoDefaultUserAgentHeader: true,
@@ -22,7 +21,7 @@ func createClient() *fasthttp.Client {
 			MaxVersion: tls.VersionTLS13,
 		},
 		Dial: func(addr string) (net.Conn, error) {
-			return fasthttpproxy.FasthttpHTTPDialerTimeout(proxies[rand.Intn(len(proxies))], time.Minute)(addr)
+			return fasthttpproxy.FasthttpHTTPDialer(proxies[rand.Intn(len(proxies))])(addr)
 		},
 	}
 

@@ -14,12 +14,9 @@ func createCrawler() (*fasthttp.Client, *fasthttp.Request) {
 
 	for i := 0; i < 10; i++ {
 		var location string = preAuthorizeIP(client, request)
-		if (location == "NO LOCATION") {
-			return client, request
-		}
 		if (location == "") {
-			log.Printf("[ERROR] Failed to get store IP authorization cookies %s", strings.Repeat(" ", 35))
-			continue
+			log.Printf("[ERROR] Failed to store IP authorization cookies %s", strings.Repeat(" ", 35))
+			break
 		}
 
 		var enterpriseValue string = getEnterpriseValue(client, request, location)
@@ -52,24 +49,29 @@ func createCrawler() (*fasthttp.Client, *fasthttp.Request) {
 }
 
 func Query(query string, page int) []SearchResult {
+	var response *fasthttp.Response = fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseResponse(response)
+
 	for i := 0; i < 10; i++ {
-		var client, request = createCrawler()
-		if (client == nil || request == nil) {
+		var client, request = getRandomCrawler()
+		if (request == nil) {
 			continue
 		}
 
-		var response *fasthttp.Response = fasthttp.AcquireResponse()
-		defer fasthttp.ReleaseRequest(request)
-		defer fasthttp.ReleaseResponse(response)
-	
 		request.SetRequestURI("https://www.google.com/search?q=" + query + "&start=" + strconv.Itoa(9 * page))
-		if err := client.Do(request, response); (err != nil) {
-			log.Println("Error fetching results:", err)
+		if err := client.DoTimeout(request, response, time.Second * 5); (err != nil) {
+			log.Println("[ERROR] Failed to fetch results:", err)
+			delete(crawlers, client)
 			continue
 		}
-		var body string = string(response.Body())		
+
+		var body string = string(response.Body())
+		if (strings.Contains(body, "SPDX-License-Identifier: Apache-2.0")) {
+			delete(crawlers, client)
+			continue
+		}
+
 		if !strings.Contains(body, `"WEB_RESULT_INNER",["`) {
-			time.Sleep(time.Second * 2)
 			continue
 		}
 

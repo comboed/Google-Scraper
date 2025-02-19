@@ -1,9 +1,11 @@
 package main
 
 import (
-	"github.com/valyala/fasthttp"
-	"github.com/dgrr/cookiejar"
+	"fmt"
 	"strings"
+
+	"github.com/dgrr/cookiejar"
+	"github.com/valyala/fasthttp"
 )
 
 func preAuthorizeIP(client *fasthttp.Client, request *fasthttp.Request) string {
@@ -12,13 +14,14 @@ func preAuthorizeIP(client *fasthttp.Client, request *fasthttp.Request) string {
 	defer fasthttp.ReleaseResponse(response)
 	
 	request.SetRequestURI("https://www.google.com/search?q=test")
-	request.Header.Set("Cookie", "SG_SS=")
+	request.Header.Set("Cookie", "SG_SS=") // Forces captcha
 
 	client.Do(request, response)
 	cookieJar.ReadResponse(response)
 	cookieJar.FillRequest(request)
 
-	if (!strings.Contains(string(response.Body()), "302 Moved") && !strings.Contains(string(request.Header.Peek("Cookie")), "NID=")) {
+	if (!strings.Contains(string(response.Body()), "302 Moved")) {
+		fmt.Println(string(response.Body()))
 		return ""
 	}
 	return string(response.Header.Peek("Location"))
