@@ -3,7 +3,7 @@ package main
 import "github.com/valyala/fasthttp"
 
 const (
-	CapSolverKey string = "CAP-B367787B6A0E5DEEE4186194F7C81372"
+	CapSolverKey string = "capsolver-key"
 	MaxCrawlers int = 1
 	MaxCount int = 27
 )
